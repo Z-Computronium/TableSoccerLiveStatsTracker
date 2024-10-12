@@ -1,0 +1,146 @@
+import React, { useState } from 'react';
+import { PlusCircle, MinusCircle, RotateCcw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+const StatButton = ({ label, value, onClick, isNegative = false }) => (
+  <div className="flex items-center mb-2">
+    <span className="mr-2 w-32">{label}</span>
+    <Button 
+      onClick={onClick} 
+      className="flex items-center justify-center space-x-1 w-16 h-8 px-2"
+      variant="outline"
+    >
+      <span className="font-bold">{value}</span>
+      {isNegative ? <MinusCircle size={14} /> : <PlusCircle size={14} />}
+    </Button>
+  </div>
+);
+
+const FoosballStatsTracker = () => {
+  const [playerName, setPlayerName] = useState('');
+  const [forwardStats, setForwardStats] = useState({
+    passesMade: 0,
+    passesMissed: 0,
+    passesBlocked: 0,
+    passesDropped: 0,
+    passesStolen: 0,
+  });
+
+  const [defensiveStats, setDefensiveStats] = useState({
+    blockedPass: 0,
+    notBlockedPass: 0,
+    interception: 0,
+  });
+
+  const updateForwardStat = (stat) => {
+    setForwardStats(prev => ({
+      ...prev,
+      [stat]: stat === 'passesStolen' ? prev[stat] - 1 : prev[stat] + 1
+    }));
+  };
+
+  const updateDefensiveStat = (stat) => {
+    setDefensiveStats(prev => ({ ...prev, [stat]: prev[stat] + 1 }));
+  };
+
+  const resetStats = () => {
+    setForwardStats({
+      passesMade: 0,
+      passesMissed: 0,
+      passesBlocked: 0,
+      passesDropped: 0,
+      passesStolen: 0,
+    });
+    setDefensiveStats({
+      blockedPass: 0,
+      notBlockedPass: 0,
+      interception: 0,
+    });
+  };
+
+  const chartData = [
+    ...Object.entries(forwardStats).map(([key, value]) => ({
+      name: key.replace(/([A-Z])/g, ' $1').trim(),
+      value: key === 'passesStolen' ? -value : value,
+    })),
+    ...Object.entries(defensiveStats).map(([key, value]) => ({
+      name: key.replace(/([A-Z])/g, ' $1').trim(),
+      value,
+    })),
+  ];
+
+  return (
+    <div className="max-w-4xl mx-auto p-4">
+      <div className="mb-4 flex justify-center items-center space-x-4">
+        <Input
+          type="text"
+          placeholder="Enter player name"
+          value={playerName}
+          onChange={(e) => setPlayerName(e.target.value)}
+          className="max-w-xs"
+        />
+        <Button onClick={resetStats} variant="outline" className="flex items-center">
+          <RotateCcw size={14} className="mr-2" />
+          Reset Stats
+        </Button>
+      </div>
+      <h1 className="text-2xl font-bold mb-4 text-center">
+        {playerName ? `${playerName}'s ` : ''}Foosball Stats Tracker
+      </h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>5-Bar Forward Offense</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.entries(forwardStats).map(([key, value]) => (
+              <StatButton 
+                key={key}
+                label={key.replace(/([A-Z])/g, ' $1').trim()} 
+                value={key === 'passesStolen' ? -value : value}
+                onClick={() => updateForwardStat(key)}
+                isNegative={key === 'passesStolen'}
+              />
+            ))}
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>5-Bar Defensive Stats</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {Object.entries(defensiveStats).map(([key, value]) => (
+              <StatButton 
+                key={key}
+                label={key.replace(/([A-Z])/g, ' $1').trim()} 
+                value={value}
+                onClick={() => updateDefensiveStat(key)} 
+              />
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Stats Visualization</CardTitle>
+        </CardHeader>
+        <CardContent className="h-96">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData}>
+              <XAxis dataKey="name" angle={-45} textAnchor="end" height={70} />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="value" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default FoosballStatsTracker;
